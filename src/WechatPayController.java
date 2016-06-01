@@ -32,11 +32,6 @@ public class WechatPayController extends AbstractController {
 	public RestResponse<String> getCodeUrl(HttpServletResponse response, HttpServletRequest request)
 			throws Exception {
 
-		String appid = GlobalConfig.APPID;
-		String mch_id = GlobalConfig.MCH_ID;
-		String appsecret = GlobalConfig.APPSECRET;
-		String key = GlobalConfig.KEY;
-
 		String currTime = TenpayUtil.getCurrTime();
 		String strTime = currTime.substring(8, currTime.length());
 		String strRandom = TenpayUtil.buildRandom(4) + "";
@@ -45,38 +40,31 @@ public class WechatPayController extends AbstractController {
 		String body = request.getParameter("client");
 		String out_trade_no = request.getParameter("contractId") + strTime;
 		String order_price = request.getParameter("price") + "00";
-		String spbill_create_ip = request.getRemoteAddr();
+		// String spbill_create_ip = request.getRemoteAddr();
+		String spbill_create_ip = "116.231.243.249";
 		String notify_url = GlobalConfig.URL + "api/weixin/result";
-		String trade_type = "NATIVE";
 
 		SortedMap<String, String> packageParams = new TreeMap<String, String>();
-		packageParams.put("appid", appid);
-		packageParams.put("mch_id", mch_id);
+		packageParams.put("appid", GlobalConfig.APPID);
+		packageParams.put("mch_id", GlobalConfig.MCH_ID);
 		packageParams.put("nonce_str", nonce_str);
 		packageParams.put("body", body);
 		packageParams.put("out_trade_no", out_trade_no);
 		packageParams.put("total_fee", order_price);
 		packageParams.put("spbill_create_ip", spbill_create_ip);
 		packageParams.put("notify_url", notify_url);
-		packageParams.put("trade_type", trade_type);
+		packageParams.put("trade_type", GlobalConfig.TRADE_TYPE);
 
-		RequestHandler requestHandler = new RequestHandler(request, response);
-		requestHandler.init(appid, appsecret, key);
+		Contract contract = getMongoTemplate()
+				.findOne(Query.query(Criteria.where("_id").is(request.getParameter("contractId"))), Contract.class);
+		contract.setTradeId(out_trade_no);
+		contract = contractRepository.save(contract);
 
-		String sign = requestHandler.createSign(packageParams);
-		String xml = "<xml>" + "<appid>" + appid + "</appid>" + "<mch_id>" + mch_id + "</mch_id>" + "<nonce_str>"
-				+ nonce_str + "</nonce_str>" + "<sign>" + sign + "</sign>" + "<body><![CDATA[" + body + "]]></body>"
-				+ "<out_trade_no>" + out_trade_no + "</out_trade_no>" + "<total_fee>" + order_price + "</total_fee>"
-				+ "<spbill_create_ip>" + spbill_create_ip + "</spbill_create_ip>" + "<notify_url>" + notify_url
-				+ "</notify_url>" + "<trade_type>" + trade_type + "</trade_type>" + "</xml>";
-
-		String code_url;
 		WechatPayService wechatPayService = new WechatPayService();
-		code_url = wechatPayService.getUrlCode(xml);
-		System.out.println(wechatPayService.getResponseMessage());
+		String code_url = wechatPayService.getUrlCode(packageParams);
 
 		if (code_url.equals(""))
-			System.err.println("err");
+			System.err.println(wechatPayService.getResponseMessage());
 
 		return RestResponse.good(code_url);
 	}
