@@ -6,4 +6,4 @@
 - 异步通知处理
 - 退款
 
-更多接口参数与规则请参考[支付宝即时到账API](https://doc.open.alipay.com/doc2/detail.htm?spm=a219a.7629140.0.0.qoJ6Az&treeId=62&articleId=104743&docType=1)
+更多接口参数与规则请参考[微信支付API](https://pay.weixin.qq.com/wiki/doc/api/native.php?chapter=6_5)
